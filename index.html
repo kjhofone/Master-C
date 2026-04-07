@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>투자 스터디 펀드</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #1a237e; text-align: center; }
+    .card { background: white; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a237e; color: white; padding: 10px; }
+    td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+    .plus { color: #e53935; font-weight: bold; }
+    .minus { color: #1565c0; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>📈 투자 스터디 펀드 현황</h1>
+
+  <div class="card">
+    <h2>👥 참여자 현황</h2>
+    <table id="membersTable">
+      <tr><th>이름</th><th>기준금액</th><th>현재평가액</th><th>수익률</th></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>📌 이번 달 탑픽</h2>
+    <table id="picksTable">
+      <tr><th>추천자</th><th>종목</th><th>매수가</th><th>현재가</th><th>수익률</th></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>📋 매매 내역</h2>
+    <table id="tradesTable">
+      <tr><th>날짜</th><th>종목</th><th>구분</th><th>가격</th><th>수량</th></tr>
+    </table>
+  </div>
+
+  <script>
+    // ⚠️ 여기에 구글 시트 ID를 넣으세요
+    const SHEET_ID = 'YOUR_SHEET_ID_HERE';
+
+    async function loadSheet(sheetName) {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      return json.table.rows;
+    }
+
+    async function renderMembers() {
+      const rows = await loadSheet('members');
+      const tbody = document.getElementById('membersTable');
+      rows.forEach(row => {
+        const name = row.c[0]?.v || '';
+        const base = row.c[1]?.v || 0;
+        const current = row.c[2]?.v || 0;
+        const rate = ((current - base) / base * 100).toFixed(2);
+        const cls = rate >= 0 ? 'plus' : 'minus';
+        tbody.innerHTML += `<tr>
+          <td>${name}</td>
+          <td>${base.toLocaleString()}원</td>
+          <td>${current.toLocaleString()}원</td>
+          <td class="${cls}">${rate}%</td>
+        </tr>`;
+      });
+    }
+
+    async function renderPicks() {
+      const rows = await loadSheet('picks');
+      const tbody = document.getElementById('picksTable');
+      rows.forEach(row => {
+        tbody.innerHTML += `<tr>
+          <td>${row.c[0]?.v || ''}</td>
+          <td>${row.c[1]?.v || ''}</td>
+          <td>${(row.c[2]?.v || 0).toLocaleString()}원</td>
+          <td>${(row.c[3]?.v || 0).toLocaleString()}원</td>
+          <td>${row.c[4]?.v || ''}</td>
+        </tr>`;
+      });
+    }
+
+    async function renderTrades() {
+      const rows = await loadSheet('trades');
+      const tbody = document.getElementById('tradesTable');
+      rows.forEach(row => {
+        tbody.innerHTML += `<tr>
+          <td>${row.c[0]?.v || ''}</td>
+          <td>${row.c[1]?.v || ''}</td>
+          <td>${row.c[2]?.v || ''}</td>
+          <td>${(row.c[3]?.v || 0).toLocaleString()}원</td>
+          <td>${row.c[4]?.v || ''}</td>
+        </tr>`;
+      });
+    }
+
+    renderMembers();
+    renderPicks();
+    renderTrades();
+  </script>
+</body>
+</html>
